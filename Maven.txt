@@ -1,0 +1,147 @@
+Step1: sudo yum install -y java-17-amazon-corretto-devel
+Step2: java -version
+step3: sudo yum install -y maven
+Step4: mvn -version
+
+-------------------------------------------------------------
+
+Step5:
+
+mkdir mywebapp
+cd mywebapp
+
+Note: Create a file named pom.xml with the following content:
+vim pom.xml
+
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- 1) Inherit from Spring Boot's parent to simplify configuration -->
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.0.5</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>com.example</groupId>
+    <artifactId>mywebapp</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <packaging>jar</packaging>
+
+    <name>My Spring Boot Web App</name>
+
+    <!-- 2) Set Java version -->
+    <properties>
+        <java.version>17</java.version>
+    </properties>
+
+    <!-- 3) Include Spring Boot Web Starter (if you need a web server) -->
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!-- 4) Spring Boot Maven Plugin: packages the JAR with a main manifest attribute -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>
+
+
+:wq
+
+------------------------------------------------------------------------------------------------------------------
+
+step6:  mkdir -p src/main/java/com/example
+	vim src/main/java/com/example/App.java
+
+
+
+step7: vim App.java
+
+package com.example;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@SpringBootApplication
+public class App {
+    public static void main(String[] args) {
+        SpringApplication.run(App.class, args);
+    }
+}
+
+@RestController
+class HelloController {
+    @GetMapping("/")
+    public String hello() {
+        return "Hello from Spring Boot on Amazon Linux!";
+    }
+}
+
+
+Step7: mvn clean package
+step8: java -jar target/mywebapp-0.0.1-SNAPSHOT.jar --server.address=0.0.0.0 --server.port=8080
+step9: curl -I http://localhost:8080
+step10: sudo netstat -tulnp | grep 8080
+step11: http://<YOUR-EC2-PUBLIC-IP>:8080/
+
+step12: sudo vim /etc/systemd/system/mywebapp.service
+
+step:13:
+
+[Unit]
+Description=My Spring Boot Web Applicationaws 
+After=network.target
+
+[Service]
+User=ec2-user
+WorkingDirectory=/home/ec2-user/mywebapp
+ExecStart=/usr/bin/java -jar /home/ec2-user/mywebapp/target/mywebapp-0.0.1-SNAPSHOT.jar --server.address=0.0.0.0 --server.port=8080
+SuccessExitStatus=143
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+
+
+step14: 
+sudo systemctl daemon-reload
+sudo systemctl start mywebapp
+sudo systemctl enable mywebapp
+
+Step15:
+sudo systemctl status mywebapp
+
+Step16: (final)
+http://<YOUR-EC2-PUBLIC-IP>:8080/
+
+************************************************************************************************
+
+
+Deploying jar file
+
+
+sudo yum update -y
+sudo yum install -y java-17-amazon-corretto-devel
+java -version
+java -jar mywebapp-0.0.1-SNAPSHOT.jar --server.address=0.0.0.0 --server.port=8080
+
+
